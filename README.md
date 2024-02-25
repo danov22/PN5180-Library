@@ -6,6 +6,7 @@ Arduino Uno / Arduino ESP-32 library for PN5180-NFC Module from NXP Semiconducto
 ![PN5180 Schematics](./doc/FritzingLayout.jpg)
 
 Release Notes:
+
 Version 2.2 - 25.02.2024
 	* Fixed bug: Wrong reading of tag and return value of previously read tag. Duplicate a previously read tag.
 	
