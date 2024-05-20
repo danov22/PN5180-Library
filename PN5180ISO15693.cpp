@@ -389,7 +389,7 @@ ISO15693ErrorCode PN5180ISO15693::readMultipleBlock(uint8_t *uid, uint8_t blockN
   PN5180DEBUG(", blockSize=");
   PN5180DEBUG(blockSize);
   PN5180DEBUG(", Cmd: ");
-  for (int i=0; i<sizeof(readMultipleCmd); i++) {
+  for (uint8_t i=0; i<sizeof(readMultipleCmd); i++) {
     PN5180DEBUG(" ");
     PN5180DEBUG(formatHex(readMultipleCmd[i]));
   }
@@ -725,7 +725,7 @@ ISO15693ErrorCode PN5180ISO15693::issueISO15693Command(uint8_t *cmd, uint8_t cmd
 
   uint32_t irqR = getIRQStatus();
   if (0 == (irqR & RX_SOF_DET_IRQ_STAT)) {
-    PN5180DEBUG("Didnt detect RX_SOF_DET_IRQ_STAT after sendData");
+    PN5180DEBUG(F("Didnt detect RX_SOF_DET_IRQ_STAT after sendData"));
 	  return EC_NO_CARD;
   }
   
@@ -733,7 +733,7 @@ ISO15693ErrorCode PN5180ISO15693::issueISO15693Command(uint8_t *cmd, uint8_t cmd
   while(!(irqR & RX_IRQ_STAT)) {
     irqR = getIRQStatus();
     if (millis() - startedWaiting > commandTimeout) {
-      PN5180DEBUG("Didnt detect RX_IRQ_STAT after sendData");
+      PN5180DEBUG(F("Didnt detect RX_IRQ_STAT after sendData"));
       return EC_NO_CARD;
     }
   }
@@ -767,20 +767,20 @@ ISO15693ErrorCode PN5180ISO15693::issueISO15693Command(uint8_t *cmd, uint8_t cmd
 
   uint32_t irqStatus = getIRQStatus();
   if (0 == (RX_SOF_DET_IRQ_STAT & irqStatus)) { // no card detected
-    PN5180DEBUG("Didnt detect RX_SOF_DET_IRQ_STAT after readData");
+    PN5180DEBUG(F("Didnt detect RX_SOF_DET_IRQ_STAT after readData"));
     clearIRQStatus(TX_IRQ_STAT | IDLE_IRQ_STAT);
     return EC_NO_CARD;
   }
 
   uint8_t responseFlags = (*resultPtr)[0];
   if (responseFlags & (1<<0)) { // error flag
-    uint8_t errorCode = (*resultPtr)[1];
+    uint8_t errorCode = (*resultPtr)[0];
     
-    PN5180DEBUG("ERROR code=");
+    PN5180DEBUG(F("ERROR code="));
     PN5180DEBUG(formatHex(errorCode));
-    PN5180DEBUG(" - ");
+    PN5180DEBUG(F(" - "));
     PN5180DEBUG(strerror((ISO15693ErrorCode)errorCode));
-    PN5180DEBUG("\n");
+    PN5180DEBUG(F("\n"));
 
     if (errorCode >= 0xA0) { // custom command error codes
       return ISO15693_EC_CUSTOM_CMD_ERROR;
@@ -790,7 +790,7 @@ ISO15693ErrorCode PN5180ISO15693::issueISO15693Command(uint8_t *cmd, uint8_t cmd
 
 #ifdef DEBUG
   if (responseFlags & (1<<3)) { // extendsion flag
-    PN5180DEBUG("Extension flag is set!\n");
+    PN5180DEBUG(F("Extension flag is set!\n"));
   }
 #endif
 
