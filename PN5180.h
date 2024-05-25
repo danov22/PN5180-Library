@@ -88,7 +88,7 @@ public:
   PN5180(uint8_t SSpin, uint8_t BUSYpin, uint8_t RSTpin, SPIClass& spi=SPI);
   ~PN5180();
 
-  void begin();
+  void begin(int8_t sck = -1, int8_t miso = -1, int8_t mosi = -1, int8_t ss = -1);
   void end();
 
   /*
@@ -149,6 +149,10 @@ public:
 private:
   bool transceiveCommand(uint8_t *sendBuffer, size_t sendBufferLen, uint8_t *recvBuffer = 0, size_t recvBufferLen = 0);
 
+  int8_t _pin_ss;
+  int8_t _pin_sck;
+  int8_t _pin_miso;
+  int8_t _pin_mosi;
 };
 
 #endif /* PN5180_H */
