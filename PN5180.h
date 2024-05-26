@@ -68,8 +68,8 @@ enum PN5180TransceiveStat {
 #define TX_RFOFF_IRQ_STAT   	(1<<8)  // RF Field OFF in PCD IRQ
 #define TX_RFON_IRQ_STAT    	(1<<9)  // RF Field ON in PCD IRQ
 #define RX_SOF_DET_IRQ_STAT 	(1<<14) // RF SOF Detection IRQ
-#define GENERAL_ERROR_IRQ_STAT 	(1<<17) // General error IRQ
-#define LPCD_IRQ_STAT 			(1<<19) // LPCD Detection IRQ
+#define GENERAL_ERROR_IRQ_STAT 	((uint32_t)1<<17) // General error IRQ
+#define LPCD_IRQ_STAT 		((uint32_t)1<<19) // LPCD Detection IRQ
 
 #define MIFARE_CLASSIC_KEYA 0x60  // Mifare Classic key A
 #define MIFARE_CLASSIC_KEYB 0x61  // Mifare Classic key B
@@ -88,7 +88,7 @@ public:
   PN5180(uint8_t SSpin, uint8_t BUSYpin, uint8_t RSTpin, SPIClass& spi=SPI);
   ~PN5180();
 
-  void begin();
+  void begin(int8_t sck = -1, int8_t miso = -1, int8_t mosi = -1, int8_t ss = -1);
   void end();
 
   /*
@@ -149,6 +149,10 @@ public:
 private:
   bool transceiveCommand(uint8_t *sendBuffer, size_t sendBufferLen, uint8_t *recvBuffer = 0, size_t recvBufferLen = 0);
 
+  int8_t _pin_ss;
+  int8_t _pin_sck;
+  int8_t _pin_miso;
+  int8_t _pin_mosi;
 };
 
 #endif /* PN5180_H */

@@ -62,25 +62,43 @@ PN5180::~PN5180() {
   }
 }
 
-void PN5180::begin() {
-  pinMode(PN5180_NSS, OUTPUT);
+void PN5180::begin(int8_t sck, int8_t miso, int8_t mosi, int8_t ss) {
+  if (ss == -1) {
+    _pin_ss = PN5180_NSS;
+  } else {
+    _pin_ss = digitalPinToGPIONumber(ss);
+  }
+
+  if (mosi != -1) {
+    _pin_mosi = digitalPinToGPIONumber(mosi);
+  }
+
+  if (miso != -1) {
+    _pin_miso = digitalPinToGPIONumber(miso);
+  }
+
+  if (sck != -1) {
+    _pin_sck = digitalPinToGPIONumber(sck);
+  }
+
+  pinMode(_pin_ss, OUTPUT);
   pinMode(PN5180_BUSY, INPUT);
   pinMode(PN5180_RST, OUTPUT);
 
-  digitalWrite(PN5180_NSS, HIGH); // disable
+  digitalWrite(_pin_ss, HIGH); // disable
   digitalWrite(PN5180_RST, HIGH); // no reset
 
-  PN5180_SPI.begin();
+  PN5180_SPI.begin(_pin_sck, _pin_miso, _pin_mosi, _pin_ss);
   PN5180DEBUG(F("SPI pinout: "));
-  PN5180DEBUG(F("SS=")); PN5180DEBUG(SS);
-  PN5180DEBUG(F(", MOSI=")); PN5180DEBUG(MOSI);
-  PN5180DEBUG(F(", MISO=")); PN5180DEBUG(MISO);
-  PN5180DEBUG(F(", SCK=")); PN5180DEBUG(SCK);
+  PN5180DEBUG(F("SS=")); PN5180DEBUG(_pin_ss);
+  PN5180DEBUG(F(", MOSI=")); PN5180DEBUG(_pin_mosi);
+  PN5180DEBUG(F(", MISO=")); PN5180DEBUG(_pin_miso);
+  PN5180DEBUG(F(", SCK=")); PN5180DEBUG(_pin_sck);
   PN5180DEBUG("\n");
 }
 
 void PN5180::end() {
-  digitalWrite(PN5180_NSS, HIGH); // disable
+  digitalWrite(_pin_ss, HIGH); // disable
   PN5180_SPI.end();
 }
 
@@ -602,12 +620,13 @@ bool PN5180::transceiveCommand(uint8_t *sendBuffer, size_t sendBufferLen, uint8_
   while (LOW != digitalRead(PN5180_BUSY)) {
     if (millis() - startedWaiting > commandTimeout) {
 		PN5180DEBUG("transceiveCommand timeout (send/0)");
-    	PN5180_SPI.endTransaction();
+		PN5180_SPI.endTransaction();
+		digitalWrite(_pin_ss, HIGH);
 		return false;
 	};
   }; // wait until busy is low
   // 1.
-  digitalWrite(PN5180_NSS, LOW); delay(1);
+  digitalWrite(_pin_ss, LOW); delay(1);
   // 2.
   PN5180_SPI.transfer((uint8_t*)sendBuffer, sendBufferLen);	
   // 3.
@@ -615,18 +634,20 @@ bool PN5180::transceiveCommand(uint8_t *sendBuffer, size_t sendBufferLen, uint8_
   while (HIGH != digitalRead(PN5180_BUSY)) {
     if (millis() - startedWaiting > commandTimeout) {
 		PN5180DEBUG("transceiveCommand timeout (send/3)");
-    	PN5180_SPI.endTransaction();
+		PN5180_SPI.endTransaction();
+		digitalWrite(_pin_ss, HIGH);
 		return false;
 	}
   }; // wait until busy is high
   // 4.
-  digitalWrite(PN5180_NSS, HIGH); delay(1);
+  digitalWrite(_pin_ss, HIGH); delay(1);
   // 5.
   startedWaiting = millis();
   while (LOW != digitalRead(PN5180_BUSY)) {
     if (millis() - startedWaiting > commandTimeout) {
 		PN5180DEBUG("transceiveCommand timeout (send/5)");
-    	PN5180_SPI.endTransaction();
+		PN5180_SPI.endTransaction();
+		digitalWrite(_pin_ss, HIGH);
 		return false;
 	};
   }; // wait until busy is low
@@ -634,12 +655,13 @@ bool PN5180::transceiveCommand(uint8_t *sendBuffer, size_t sendBufferLen, uint8_
   // check, if write-only
   if ((0 == recvBuffer) || (0 == recvBufferLen)) {
     PN5180_SPI.endTransaction();
+    digitalWrite(_pin_ss, HIGH);
     return true;
   }
   PN5180DEBUG(F("Receiving SPI frame...\n"));
 
   // 1.
-  digitalWrite(PN5180_NSS, LOW); 
+  digitalWrite(_pin_ss, LOW);
   // 2.
   memset(recvBuffer, 0xFF, recvBufferLen);
   PN5180_SPI.transfer(recvBuffer, recvBufferLen);
@@ -648,18 +670,20 @@ bool PN5180::transceiveCommand(uint8_t *sendBuffer, size_t sendBufferLen, uint8_
   while (HIGH != digitalRead(PN5180_BUSY)) {
     if (millis() - startedWaiting > commandTimeout) {
 		PN5180DEBUG("transceiveCommand timeout (receive/3)");
-    	PN5180_SPI.endTransaction();
+		PN5180_SPI.endTransaction();
+		digitalWrite(_pin_ss, HIGH);
 		return false;
 	};
   }; // wait until busy is high
   // 4.
-  digitalWrite(PN5180_NSS, HIGH); 
+  digitalWrite(_pin_ss, HIGH);
   // 5.
   startedWaiting = millis();
   while (LOW != digitalRead(PN5180_BUSY)) {
     if (millis() - startedWaiting > commandTimeout) {
 		PN5180DEBUG("transceiveCommand timeout (receive/5)");
-    	PN5180_SPI.endTransaction();
+		PN5180_SPI.endTransaction();
+		digitalWrite(_pin_ss, HIGH);
 		return false;
 	};
   }; // wait until busy is low
@@ -673,6 +697,7 @@ bool PN5180::transceiveCommand(uint8_t *sendBuffer, size_t sendBufferLen, uint8_
   PN5180DEBUG("'\n");
 #endif
   PN5180_SPI.endTransaction();
+  digitalWrite(_pin_ss, HIGH);
   return true;
 }
 
